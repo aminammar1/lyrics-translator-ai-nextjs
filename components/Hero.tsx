@@ -1,5 +1,5 @@
 import React from 'react'
-import { bagelFatOne } from '@/app/layout'
+import {italiana } from '@/app/layout'
 
 export default function Hero() {
     return (
@@ -15,12 +15,12 @@ export default function Hero() {
                 text-center
             "
         >
-            <h3 className="opacity-50 text-base lg:text-xl">
-                Music Knows No Barriers
+            <h3 className="opacity-70 text-lg lg:text-2xl font-semibold">
+                Music Know no Barriers
             </h3>
             <h1
                 className={
-                    `${bagelFatOne.className} text-7xl lg:text-9xl mb-5`
+                    `${italiana.className} text-7xl lg:text-9xl mb-5`
                 }
             >
                 Sing Lang

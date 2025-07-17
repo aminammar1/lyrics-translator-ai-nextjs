@@ -1,17 +1,19 @@
-import type { Metadata } from "next"
-import { Lexend, Bagel_Fat_One } from "next/font/google"
-import Background from "@/components/Background"
-import Header from "@/components/Header"
-import "./globals.css"
+import type { Metadata } from 'next'
+import { Lexend, Italiana } from 'next/font/google'
+import Background from '@/components/Background'
+import Header from '@/components/Header'
+import { AuthProvider } from '@/context/AuthContext'
+import './globals.css'
+import { Suspense } from 'react'
 
 const lexend = Lexend({
-  weight: ["400", "800"],
-  subsets: ["latin"],
+  weight: ['400', '800'],
+  subsets: ['latin'],
 })
 
-export const bagelFatOne = Bagel_Fat_One({
-  weight: "400",
-  subsets: ["latin"],
+export const italiana  = Italiana({
+  weight: '400',
+  subsets: ['latin'],
 })
 
 // export const metadata: Metadata = {
@@ -22,18 +24,22 @@ export const bagelFatOne = Bagel_Fat_One({
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <title>Sing Lang</title>
-      </head>
-      <body className={lexend.className}>
-        <Background />
-        <Header />
-        {children}
-      </body>
-    </html>
+    <AuthProvider>
+      <Suspense>
+        <html lang="en">
+          <head>
+            <title>Sing Lang</title>
+          </head>
+          <body className={lexend.className}>
+            <Background />
+            <Header />
+            {children}
+          </body>
+        </html>
+      </Suspense>
+    </AuthProvider>
   )
 }

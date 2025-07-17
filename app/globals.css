@@ -1,3 +1,27 @@
+/* Extra soft glow for header elements */
+.drop-shadow-soft {
+  filter: drop-shadow(0 0 4px var(--custom-pink))
+    drop-shadow(0 0 1px var(--custom-orange));
+}
+.shadow-soft {
+  box-shadow: 0 1px 12px 0 var(--custom-pink), 0 1px 4px 0 var(--custom-orange);
+}
+/* Poetic, cinematic glow for header elements */
+.drop-shadow-poetic {
+  filter: drop-shadow(0 0 8px var(--custom-pink))
+    drop-shadow(0 0 2px var(--custom-orange));
+}
+.shadow-poetic {
+  box-shadow: 0 2px 24px 0 var(--custom-pink), 0 1px 8px 0 var(--custom-orange);
+}
+/* Dreamy glow for header elements */
+.drop-shadow-glow {
+  filter: drop-shadow(0 0 12px var(--custom-pink))
+    drop-shadow(0 0 4px var(--custom-orange));
+}
+.shadow-glow {
+  box-shadow: 0 0 16px 0 var(--custom-pink), 0 0 4px 0 var(--custom-orange);
+}
 @import 'tailwindcss';
 
 /* Custom CSS variables */
@@ -48,10 +72,34 @@ button:hover {
     box-shadow: 0 6px 24px 0 var(--custom-light-orange),
       0 2px 8px 0 var(--custom-orange);
   }
-}
 
-/* Custom color utilities */
-@layer utilities {
+  /* Animated background circles */
+  .animated-circle {
+    position: fixed;
+    animation: floatCircle 12s ease-in-out infinite alternate;
+    will-change: transform, opacity;
+    opacity: 0.8;
+  }
+  @keyframes floatCircle {
+    0% {
+      transform: translateY(0) scale(1);
+      opacity: 0.8;
+    }
+    40% {
+      transform: translateY(-30px) scale(1.05);
+      opacity: 0.9;
+    }
+    60% {
+      transform: translateY(30px) scale(0.98);
+      opacity: 0.7;
+    }
+    100% {
+      transform: translateY(0) scale(1);
+      opacity: 0.8;
+    }
+  }
+
+  /* Custom color utilities */
   .bg-background {
     background-color: var(--background);
   }
