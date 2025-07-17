@@ -1,21 +1,23 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from "next"
+import { Lexend, Bagel_Fat_One } from "next/font/google"
+import Background from "@/components/Background"
+import Header from "@/components/Header"
+import "./globals.css"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const lexend = Lexend({
+  weight: ["400", "800"],
   subsets: ["latin"],
-});
+})
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+export const bagelFatOne = Bagel_Fat_One({
+  weight: "400",
   subsets: ["latin"],
-});
+})
 
-export const metadata: Metadata = {
-  title: "Sing Lang",
-  description: "Next.js app for translte songs lyrics",
-};
+// export const metadata: Metadata = {
+//   title: "Sing Lang",
+//   description: "Next.js app for translte songs lyrics",
+// };
 
 export default function RootLayout({
   children,
@@ -24,11 +26,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <head>
+        <title>Sing Lang</title>
+      </head>
+      <body className={lexend.className}>
+        <Background />
+        <Header />
         {children}
       </body>
     </html>
-  );
+  )
 }

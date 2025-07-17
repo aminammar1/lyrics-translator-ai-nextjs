@@ -1,26 +1,94 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
+/* Custom CSS variables */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #111111;
+  --foreground: #ffb380;
+  --custom-orange: #ff5500;
+  --custom-dark-orange: #cc4400;
+  --custom-light-orange: #ffb380;
+  --custom-blue: #181818;
+  --custom-pink: #ffb380;
+  --custom-light-blue: #222;
+  --transparent-black: rgba(0, 0, 0, 0.7);
+  --transparent-foreground: rgba(255, 85, 0, 0.1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Base styles */
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Button base styles */
+button {
+  transition: all 0.2s;
+}
+
+button:hover {
+  cursor: pointer;
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .button:hover {
+    opacity: 0.7;
+  }
+  .button:active {
+    scale: 0.96;
+  }
+
+  .search-shadow {
+    box-shadow: 0 2px 12px 0 var(--custom-light-orange),
+      0 1px 4px 0 var(--custom-orange);
+  }
+
+  .shadow-3xl {
+    box-shadow: 0 6px 24px 0 var(--custom-light-orange),
+      0 2px 8px 0 var(--custom-orange);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Custom color utilities */
+@layer utilities {
+  .bg-background {
+    background-color: var(--background);
+  }
+
+  .text-foreground {
+    color: var(--foreground);
+  }
+
+  .bg-custom-blue {
+    background-color: var(--custom-blue);
+  }
+
+  .text-custom-blue {
+    color: var(--custom-blue);
+  }
+
+  .bg-custom-pink {
+    background-color: var(--custom-pink);
+  }
+
+  .text-custom-pink {
+    color: var(--custom-pink);
+  }
+
+  .bg-custom-light-blue {
+    background-color: var(--custom-light-blue);
+  }
+
+  .text-custom-light-blue {
+    color: var(--custom-light-blue);
+  }
+
+  .bg-transparent-black {
+    background-color: var(--transparent-black);
+  }
+
+  .bg-transparent-foreground {
+    background-color: var(--transparent-foreground);
+  }
 }
