@@ -19,7 +19,7 @@ export default function Song() {
             const getSongPage = async (songId: string, songUrl: string) => {
                 setLoading(true);
                 const response = await fetch(
-                    `/api/genius/songs/${songId}/?url=${songUrl}`
+                    `/api/genius/${songId}/?url=${songUrl}`
                 )
                 const song = await response.json()
                 setSongInfo(song)

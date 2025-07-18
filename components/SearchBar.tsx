@@ -24,7 +24,7 @@ export default function SearchBar() {
         }
         try {
             const res = await fetch(
-                `/api/genius/songs/search/quick?q=${encodeURIComponent(lyricsToSearch)}`
+                `/api/genius/search/quick?q=${encodeURIComponent(lyricsToSearch)}`
             )
             const data = await res.json()
             setResults(data)

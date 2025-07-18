@@ -22,7 +22,7 @@ export default function SearchPage() {
                 try {
                     setLoading(true)
                     const response = await fetch(
-                        `/api/genius/songs/search/full?q=${encodeURIComponent(query)}`
+                        `/api/genius/search/full?q=${encodeURIComponent(query)}`
                     )
                     if (!response.ok) {
                         throw new Error('Error fetching full search results')
