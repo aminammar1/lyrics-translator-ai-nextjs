@@ -25,7 +25,7 @@ export default function SearchPage() {
                         `/api/genius/search/full?q=${encodeURIComponent(query)}`
                     )
                     if (!response.ok) {
-                        throw new Error('Error fetching full search results')
+                        console.log('Error fetching full results:', response.statusText)
                     }
                     const data = await response.json()
                     setFullResults(data)
