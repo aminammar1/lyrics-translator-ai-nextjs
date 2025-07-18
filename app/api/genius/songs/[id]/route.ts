@@ -6,15 +6,16 @@ export async function GET(
     req: NextRequest,
     { params }: any
 ): Promise<NextResponse> {
-    const { searchParams } = new URL(req.url)
-    const songId = params.id
+    const { searchParams } = new URL(req.url);
+    const resolvedParams = await params;
+    const songId = resolvedParams.id;
     const songUrl = searchParams.get('url')
 
     if (!songId) {
         return NextResponse.json(
             { error: 'Query parameter "id" is required' },
             { status: 400 }
-        )
+        );
     }
 
     if (!songUrl) {
@@ -24,7 +25,7 @@ export async function GET(
         )
     }
 
-    const GENIUS_ACCESS_TOKEN = process.env.GENIUS_ACCESS_TOKEN
+    const GENIUS_ACCESS_TOKEN = process.env.GENIUS_ACCESS_TOKEN;
 
     if (!GENIUS_ACCESS_TOKEN) {
         return NextResponse.json(
@@ -44,10 +45,10 @@ export async function GET(
         )
 
         if (!response.ok) {
-            throw new Error(`Error Genius API: ${response.statusText}`)
+            throw new Error(`Error Genius API: ${response.statusText}`);
         }
 
-        const data = await response.json()
+        const data = await response.json();
 
         const songPageResponse = await axios.get(songUrl)
         const $ = cheerio.load(songPageResponse.data)
@@ -57,7 +58,7 @@ export async function GET(
         lyricsContainer.children().remove()
         const lyrics = lyricsContainer.text()
 
-        const song = data.response.song
+        const song = data.response.song;
 
         const formattedSong = {
             id: song.id,
@@ -80,9 +81,9 @@ export async function GET(
             lyrics: lyrics,
         }
 
-        return NextResponse.json(formattedSong)
+        return NextResponse.json(formattedSong);
     } catch (error) {
-        console.error('Error Genius API:', error as any)
+        console.error('Error Genius API:', error as any);
         return NextResponse.json(
             { error: 'Internal Server Error' },
             { status: 500 }
