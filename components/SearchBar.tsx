@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { SearchSlash } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useSearch } from '@/hooks/useApi'
@@ -16,15 +16,15 @@ export default function SearchBar() {
         setLyricsToSearch(value)
     }
 
-    const fetchSongs = async () => {
+    const fetchSongs = useCallback(async () => {
         if (lyricsToSearch.trim() === '') {
             setShowResults(false)
             return
         }
 
         const data = await searchQuick(lyricsToSearch)
-        setShowResults(data.length > 0)
-    }
+        setShowResults(data.length > 0 || loading)
+    }, [lyricsToSearch, searchQuick, loading])
 
     useEffect(() => {
         if (lyricsToSearch.trim() === '') {
@@ -32,7 +32,8 @@ export default function SearchBar() {
             return
         }
 
-        const timeoutId = setTimeout(fetchSongs, 500)
+        setShowResults(true)
+        const timeoutId = setTimeout(fetchSongs, 300)
         return () => clearTimeout(timeoutId)
     }, [lyricsToSearch])
 
@@ -43,7 +44,6 @@ export default function SearchBar() {
     }
 
     const handleInputBlur = () => {
-        // Delay hiding results to allow for clicks
         setTimeout(() => setShowResults(false), 200)
     }
 
@@ -93,7 +93,7 @@ export default function SearchBar() {
                 >
                     <SearchSlash size={22} />
                 </button>
-                {(results.length > 0 || loading) && showResults && (
+                {showResults && lyricsToSearch.trim() && (
                     <FastResults
                         results={results}
                         loading={loading}

@@ -12,7 +12,7 @@ export default function SongPage({ song, loading }: SongProps) {
     if (loading || !song.id) {
         return (
             <div className="w-fit mx-auto mt-40">
-                <Loader />
+                <Loader width={32} />
             </div>
         )
     }
@@ -42,18 +42,28 @@ export default function SongPage({ song, loading }: SongProps) {
                         <div className="w-full h-full relative flex flex-col justify-between gap-5">
                             <div className="flex justify-between flex-wrap gap-5">
                                 <div>
-                                    <p className="text-base opacity-50">Language</p>
-                                    <p className="text-l">{song.language}</p>
+                                    <p className="text-base opacity-50">
+                                        Language
+                                    </p>
+                                    <p className="text-l">
+                                        {song.language}
+                                    </p>
                                 </div>
                                 <div className="basis-[50%]">
-                                    <p className="text-base opacity-50">Release date</p>
-                                    <p className="text-l">{song.release_date}</p>
+                                    <p className="text-base opacity-50">
+                                        Release date
+                                    </p>
+                                    <p className="text-l">
+                                        {song.release_date}
+                                    </p>
                                 </div>
                             </div>
 
                             <div className="flex justify-between w-full flex-wrap gap-5">
                                 <div>
-                                    <p className="text-base opacity-50">Primary artist</p>
+                                    <p className="text-base opacity-50">
+                                        Primary artist
+                                    </p>
                                     <div className="flex flex-col items-center mt-2 w-fit">
                                         <Image
                                             src={song.primary_artist.image || ''}
@@ -69,7 +79,9 @@ export default function SongPage({ song, loading }: SongProps) {
                                 </div>
 
                                 <div className="basis-[50%]">
-                                    <p className="text-base opacity-50">Featured artists</p>
+                                    <p className="text-base opacity-50">
+                                        Featured artists
+                                    </p>
                                     <div className="flex gap-2 justify-start flex-wrap">
                                         {song.featured_artists.map((artist: any) => (
                                             <div
@@ -95,12 +107,12 @@ export default function SongPage({ song, loading }: SongProps) {
                     </div>
                 </div>
             </div>
-            {/* 
+            {/*
                 <TranslateSection
                     lyrics={song.lyrics}
                     language={song.language}
                     song={song}
-                /> 
+                />
             */}
         </div>
     )

@@ -1,21 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
+import { NextRequest, NextResponse } from 'next/server'
+import axios from 'axios'
+import * as cheerio from 'cheerio'
 
 export async function GET(
     req: NextRequest,
     { params }: any
 ): Promise<NextResponse> {
-    const { searchParams } = new URL(req.url);
-    const resolvedParams = await params;
-    const songId = resolvedParams.id;
-    const songUrl = searchParams.get('url');
+    const { searchParams } = new URL(req.url)
+    const resolvedParams = await params
+    const songId = resolvedParams.id
+    const songUrl = searchParams.get('url')
 
     if (!songId) {
         return NextResponse.json(
             { error: 'Query parameter "id" is required' },
             { status: 400 }
-        );
+        )
     }
 
     if (!songUrl) {
@@ -25,7 +25,7 @@ export async function GET(
         )
     }
 
-    const GENIUS_ACCESS_TOKEN = process.env.GENIUS_ACCESS_TOKEN;
+    const GENIUS_ACCESS_TOKEN = process.env.GENIUS_ACCESS_TOKEN
 
     if (!GENIUS_ACCESS_TOKEN) {
         return NextResponse.json(
@@ -35,59 +35,82 @@ export async function GET(
     }
 
     try {
-        const response = await fetch(
-            `https://api.genius.com/songs/${encodeURIComponent(songId)}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${GENIUS_ACCESS_TOKEN}`,
-                },
-            }
-        )
+        const [songResponse, songPageResponse] = await Promise.all([
+            fetch(
+                `https://api.genius.com/songs/${encodeURIComponent(songId)}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${GENIUS_ACCESS_TOKEN}`
+                    },
+                    next: { revalidate: 3600 }
+                }
+            ),
+            axios.get(songUrl, { timeout: 15000 })
+        ])
 
-        if (!response.ok) {
-            throw new Error(`Error Genius API: ${response.statusText}`);
+        if (!songResponse.ok) {
+            const errorText = await songResponse.text()
+            console.error('Genius API Error:', {
+                status: songResponse.status,
+                statusText: songResponse.statusText,
+                body: errorText
+            })
+            throw new Error(
+                `Genius API Error: ${songResponse.status} ${songResponse.statusText}`
+            )
         }
 
-        const data = await response.json();
+        const data = await songResponse.json()
 
-        const songPageResponse = await axios.get(songUrl);
-        const $ = cheerio.load(songPageResponse.data);
+        if (!data.response || !data.response.song) {
+            console.error('Invalid Genius API response structure:', data)
+            throw new Error('Invalid song data received')
+        }
 
-        const lyricsContainer = $('[data-lyrics-container="true"]');
-        $('br', lyricsContainer).replaceWith('\n');
-        $('a', lyricsContainer).replaceWith((_i, el) => $(el).text());
-        lyricsContainer.children().remove();
-        const lyrics = lyricsContainer.text();
+        const $ = cheerio.load(songPageResponse.data)
 
-        const song = data.response.song;
+        const lyricsContainer = $('[data-lyrics-container="true"]')
+        $('br', lyricsContainer).replaceWith('\n')
+        $('a', lyricsContainer).replaceWith((_i, el) => $(el).text())
+        lyricsContainer.children().remove()
+        const lyrics = lyricsContainer.text()
+
+        const song = data.response.song
 
         const formattedSong = {
-            id:              song.id,
-            title:           song.title,
-            artist_name:     song.primary_artist.name,
-            url:             song.url,
-            image:           song.header_image_url,
-            release_date:    song.release_date_for_display,
-            language:        song.language,
-            featured_artists: song.featured_artists.map((artist: any) => ({
-                id:    artist.id,
-                name:  artist.name,
-                image: artist.image_url,
-            })),
+            id: song.id,
+            title: song.title,
+            artist_name: song.primary_artist.name,
+            url: song.url,
+            image: song.header_image_url,
+            release_date: song.release_date_for_display,
+            language: song.language,
+            featured_artists:
+                song.featured_artists?.map((artist: any) => ({
+                    id: artist.id,
+                    name: artist.name,
+                    image: artist.image_url
+                })) || [],
             primary_artist: {
-                id:    song.primary_artist.id,
-                name:  song.primary_artist.name,
-                image: song.primary_artist.image_url,
+                id: song.primary_artist.id,
+                name: song.primary_artist.name,
+                image: song.primary_artist.image_url
             },
-            lyrics: lyrics,
-        };
+            lyrics: lyrics
+        }
 
-        return NextResponse.json(formattedSong);
-
-    } catch (error) {
-        console.error('Error Genius API:', error as any);
         return NextResponse.json(
-            { error: 'Internal Server Error' },
+            formattedSong,
+            {
+                headers: {
+                    'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200'
+                }
+            }
+        )
+    } catch (error: any) {
+        console.error('Error in song details API:', error)
+        return NextResponse.json(
+            { error: error.message || 'Failed to fetch song details' },
             { status: 500 }
         )
     }

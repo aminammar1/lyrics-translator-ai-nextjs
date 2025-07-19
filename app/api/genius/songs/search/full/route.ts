@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
-    const query = searchParams.get("q")
+    const query = searchParams.get('q')
 
     if (!query) {
         return NextResponse.json(
@@ -11,11 +11,11 @@ export async function GET(req: NextRequest) {
         )
     }
 
-    const GENIUS_ACCESS_TOKEN = process.env.GENIUS_ACCESS_TOKEN
+    const GENIUS_ACCESS_TOKEN = process.env.GENIUS_ACCESS_TOKEN;
 
     if (!GENIUS_ACCESS_TOKEN) {
         return NextResponse.json(
-            { error: "Missing Genius API token" },
+            { error: 'Missing Genius API token' },
             { status: 500 }
         )
     }
@@ -27,14 +27,29 @@ export async function GET(req: NextRequest) {
                 headers: {
                     Authorization: `Bearer ${GENIUS_ACCESS_TOKEN}`,
                 },
+                next: { revalidate: 300 },
             }
         )
 
         if (!response.ok) {
-            throw new Error(`Error Genius API: ${response.statusText}`)
+            const errorText = await response.text();
+            console.error('Genius API Error:', {
+                status: response.status,
+                statusText: response.statusText,
+                body: errorText,
+            })
+            throw new Error(
+                `Genius API Error: ${response.status} ${response.statusText}`
+            )
         }
 
-        const data = await response.json()
+        const data = await response.json();
+
+        if (!data.response || !data.response.hits) {
+            console.error('Invalid Genius API response structure:', data);
+            return NextResponse.json([], { status: 200 });
+        }
+
         const filteredResults = data.response.hits.map((hit: any) => ({
             id: hit.result.id,
             title: hit.result.title,
@@ -42,16 +57,19 @@ export async function GET(req: NextRequest) {
             url: hit.result.url,
             image: hit.result.header_image_url,
             date: hit.result.release_date_for_display,
-            artists_images: hit.result.primary_artists.map(
-                (artist: any) => artist.image_url
-            ),
+            artists_images:
+                hit.result.primary_artists?.map((artist: any) => artist.image_url) || [],
         }))
 
-        return NextResponse.json(filteredResults)
-    } catch (error) {
-        console.error("Error Genius API:", error)
+        return NextResponse.json(filteredResults, {
+            headers: {
+                'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+            },
+        })
+    } catch (error: any) {
+        console.error('Error in full search API:', error);
         return NextResponse.json(
-            { error: "Internal Server Error" },
+            { error: error.message || 'Failed to search songs' },
             { status: 500 }
         )
     }

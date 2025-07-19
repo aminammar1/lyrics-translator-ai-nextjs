@@ -3,12 +3,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/supabase/client'
-import { UserDocument, getUserDocument } from '@/data/userDocument'
 import toast from 'react-hot-toast'
 
 interface AuthContextType {
   user: User | null
-  userDocument: UserDocument | null
   userId: string | null
   loading: boolean
   signUp: (
@@ -32,41 +30,51 @@ export const useAuth = () => {
   return context
 }
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [userDocument, setUserDocument] = useState<UserDocument | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      if (session?.user) {
-        setUser(session.user)
-        const userDoc = await getUserDocument(session.user.id)
-        setUserDocument(userDoc)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+
+        if (session?.user) {
+          console.log('Initial session found for user:', session.user.id)
+          setUser(session.user)
+        } else {
+          console.log('No initial session found')
+        }
+      } catch (error) {
+        console.error('Error loading initial session:', error)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     getSession()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setUser(session.user)
-        const userDoc = await getUserDocument(session.user.id)
-        setUserDocument(userDoc)
-      } else {
-        setUser(null)
-        setUserDocument(null)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id)
+
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('User signed in:', session.user.id)
+          setUser(session.user)
+        } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out')
+          setUser(null)
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          console.log('Token refreshed for user:', session.user.id)
+          setUser(session.user)
+        } else if (session?.user) {
+          setUser(session.user)
+        } else {
+          setUser(null)
+        }
+        setLoading(false)
       }
-      setLoading(false)
-    })
+    )
 
     return () => subscription.unsubscribe()
   }, [])
@@ -75,7 +83,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const { data, error } = await supabase.auth.signUp({ email, password })
       if (error) throw error
-      toast.success('Account created successfully!')
+
+      if (data.user) {
+        if (data.user.email_confirmed_at) {
+          toast.success('Account created and verified successfully!')
+        } else {
+          toast.success('Account created! Please check your email to verify your account.')
+        }
+      } else {
+        throw new Error('User creation failed')
+      }
+
       return { user: data.user, error: null }
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to create account'
@@ -86,12 +104,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      toast.success('Welcome back!')
+
+      if (data.user && data.session) {
+        toast.success('Signed in successfully!')
+      } else {
+        throw new Error('Sign in failed - no user or session returned')
+      }
+
       return { user: data.user, error: null }
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to sign in'
@@ -112,7 +133,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const value: AuthContextType = {
     user,
-    userDocument,
     userId: user?.id || null,
     loading,
     signUp,
@@ -120,5 +140,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     signOut,
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
 }

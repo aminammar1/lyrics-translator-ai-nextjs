@@ -3,8 +3,7 @@ import { Lexend, Italiana } from 'next/font/google'
 import Background from '@/components/Background'
 import Header from '@/components/Header'
 import { AuthProvider } from '@/context/AuthContext'
-import { Toaster } from 'react-hot-toast'
-import { toastConfig } from '@/lib/toastConfig'
+import { ToastProvider } from '@/lib/toast'
 import './globals.css'
 import { Suspense } from 'react'
 
@@ -39,7 +38,7 @@ export default function RootLayout({
             <Background />
             <Header />
             {children}
-            <Toaster toastOptions={toastConfig} />
+            <ToastProvider />
           </body>
         </html>
       </Suspense>

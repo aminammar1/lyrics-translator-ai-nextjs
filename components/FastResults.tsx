@@ -9,7 +9,11 @@ interface FastResultsProps {
     setShowResults: (show: boolean) => void
 }
 
-export default function FastResults({ results, loading, setShowResults }: FastResultsProps) {
+export default function FastResults({
+    results,
+    loading,
+    setShowResults,
+}: FastResultsProps) {
     const router = useRouter()
 
     const handleSongClick = (id: string, url: string) => {
@@ -27,7 +31,7 @@ export default function FastResults({ results, loading, setShowResults }: FastRe
         >
             {loading ? (
                 <div className="p-4 flex justify-center items-center">
-                    <Loader />
+                    <Loader width={24} />
                 </div>
             ) : results.length > 0 ? (
                 results.map((result: any) => (
