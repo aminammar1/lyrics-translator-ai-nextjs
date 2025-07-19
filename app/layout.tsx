@@ -3,6 +3,8 @@ import { Lexend, Italiana } from 'next/font/google'
 import Background from '@/components/Background'
 import Header from '@/components/Header'
 import { AuthProvider } from '@/context/AuthContext'
+import { Toaster } from 'react-hot-toast'
+import { toastConfig } from '@/lib/toastConfig'
 import './globals.css'
 import { Suspense } from 'react'
 
@@ -11,7 +13,7 @@ const lexend = Lexend({
   subsets: ['latin'],
 })
 
-export const italiana  = Italiana({
+export const italiana = Italiana({
   weight: '400',
   subsets: ['latin'],
 })
@@ -37,6 +39,7 @@ export default function RootLayout({
             <Background />
             <Header />
             {children}
+            <Toaster toastOptions={toastConfig} />
           </body>
         </html>
       </Suspense>

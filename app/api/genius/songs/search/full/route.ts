@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(
             { error: "Missing Genius API token" },
             { status: 500 }
-        );
+        )
     }
 
     try {
@@ -28,13 +28,13 @@ export async function GET(req: NextRequest) {
                     Authorization: `Bearer ${GENIUS_ACCESS_TOKEN}`,
                 },
             }
-        );
+        )
 
         if (!response.ok) {
-            throw new Error(`Error Genius API: ${response.statusText}`);
+            throw new Error(`Error Genius API: ${response.statusText}`)
         }
 
-        const data = await response.json();
+        const data = await response.json()
         const filteredResults = data.response.hits.map((hit: any) => ({
             id: hit.result.id,
             title: hit.result.title,
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
             artists_images: hit.result.primary_artists.map(
                 (artist: any) => artist.image_url
             ),
-        }));
+        }))
 
         return NextResponse.json(filteredResults)
     } catch (error) {

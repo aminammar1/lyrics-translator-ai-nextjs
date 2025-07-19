@@ -14,7 +14,6 @@ export default function SignupSignIn({ toggleOpenSignIn }: SignupSignInProps) {
         email: '',
         password: '',
     })
-    const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
     const { signUp, signIn } = useAuth()
@@ -22,42 +21,33 @@ export default function SignupSignIn({ toggleOpenSignIn }: SignupSignInProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
-        setError('')
 
         try {
             if (isSignup) {
                 const { error } = await signUp(formData.email, formData.password)
-                if (error) {
-                    setError(error)
-                } else {
-                    toggleOpenSignIn()
-                }
+                if (!error) toggleOpenSignIn()
             } else {
                 const { error } = await signIn(formData.email, formData.password)
-                if (error) {
-                    setError(error)
-                } else {
-                    toggleOpenSignIn()
-                }
+                if (!error) toggleOpenSignIn()
             }
         } catch (err) {
-            setError('An unexpected error occurred')
+            console.error('Authentication error:', err)
         } finally {
             setLoading(false)
         }
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({
-            ...formData,
+        setFormData(prev => ({
+            ...prev,
             [e.target.name]: e.target.value,
-        })
+        }))
     }
 
     return (
         <div className="min-h-screen w-full fixed flex items-center justify-center bg-[#0000005d] backdrop-blur-sm z-[1000]">
-            <div className="backdrop-blur-xl relative bg-background/95 p-8 rounded-3xl shadow-2xl shadow-foreground/20 max-w-sm w-full overflow-hidden border border-foreground/30">
-                <div className="rounded-full bg-gradient-to-br from-foreground/20 to-foreground/30 absolute w-[150px] h-[150px] blur-[100px] z-[-10] bottom-[-50px] right-[-20px]" />
+            <div className="relative bg-background/95 p-8 rounded-3xl shadow-2xl shadow-foreground/20 max-w-sm w-full overflow-hidden border border-foreground/30 backdrop-blur-xl">
+                <div className="absolute w-[150px] h-[150px] blur-[100px] z-[-10] bottom-[-50px] right-[-20px] rounded-full bg-gradient-to-br from-foreground/20 to-foreground/30" />
 
                 <button
                     className="absolute right-[15px] top-[15px] p-2 rounded-full bg-background/60 hover:bg-background/80 border border-foreground/30 transition-all duration-300 text-foreground hover:text-foreground/80 button"
@@ -69,12 +59,6 @@ export default function SignupSignIn({ toggleOpenSignIn }: SignupSignInProps) {
                 <h2 className="text-3xl font-light text-center text-foreground mb-8 tracking-wide">
                     Welcome to Sing Lang
                 </h2>
-
-                {error && (
-                    <div className="mb-6 p-4 bg-red-500/15 border border-red-400/40 rounded-2xl text-red-300 text-sm font-light backdrop-blur-sm">
-                        {error}
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
@@ -95,6 +79,7 @@ export default function SignupSignIn({ toggleOpenSignIn }: SignupSignInProps) {
                             placeholder="Enter your email"
                         />
                     </div>
+
                     <div className="space-y-2">
                         <label
                             htmlFor="password"
@@ -113,12 +98,17 @@ export default function SignupSignIn({ toggleOpenSignIn }: SignupSignInProps) {
                             placeholder="Enter your password"
                         />
                     </div>
+
                     <button
                         type="submit"
                         disabled={loading}
                         className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:transform-none tracking-wide button"
                     >
-                        {loading ? 'Please wait...' : isSignup ? 'Sign Up' : 'Sign In'}
+                        {loading
+                            ? 'Please wait...'
+                            : isSignup
+                                ? 'Sign Up'
+                                : 'Sign In'}
                     </button>
                 </form>
 
@@ -126,7 +116,7 @@ export default function SignupSignIn({ toggleOpenSignIn }: SignupSignInProps) {
                     {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
                     <button
                         type="button"
-                        onClick={() => setIsSignup(!isSignup)}
+                        onClick={() => setIsSignup(prev => !prev)}
                         className="text-orange-400 hover:text-orange-300 font-medium transition-colors duration-200 button"
                     >
                         {isSignup ? 'Sign In' : 'Sign Up'}

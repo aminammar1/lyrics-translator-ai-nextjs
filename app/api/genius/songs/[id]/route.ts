@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
-import axios from 'axios'
-import * as cheerio from 'cheerio'
+import { NextRequest, NextResponse } from 'next/server';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 
 export async function GET(
     req: NextRequest,
@@ -9,7 +9,7 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const resolvedParams = await params;
     const songId = resolvedParams.id;
-    const songUrl = searchParams.get('url')
+    const songUrl = searchParams.get('url');
 
     if (!songId) {
         return NextResponse.json(
@@ -50,38 +50,40 @@ export async function GET(
 
         const data = await response.json();
 
-        const songPageResponse = await axios.get(songUrl)
-        const $ = cheerio.load(songPageResponse.data)
-        const lyricsContainer = $('[data-lyrics-container="true"]')
-        $('br', lyricsContainer).replaceWith('\n')
-        $('a', lyricsContainer).replaceWith((_i, el) => $(el).text())
-        lyricsContainer.children().remove()
-        const lyrics = lyricsContainer.text()
+        const songPageResponse = await axios.get(songUrl);
+        const $ = cheerio.load(songPageResponse.data);
+
+        const lyricsContainer = $('[data-lyrics-container="true"]');
+        $('br', lyricsContainer).replaceWith('\n');
+        $('a', lyricsContainer).replaceWith((_i, el) => $(el).text());
+        lyricsContainer.children().remove();
+        const lyrics = lyricsContainer.text();
 
         const song = data.response.song;
 
         const formattedSong = {
-            id: song.id,
-            title: song.title,
-            artist_name: song.primary_artist.name,
-            url: song.url,
-            image: song.header_image_url,
-            release_date: song.release_date_for_display,
-            language: song.language,
+            id:              song.id,
+            title:           song.title,
+            artist_name:     song.primary_artist.name,
+            url:             song.url,
+            image:           song.header_image_url,
+            release_date:    song.release_date_for_display,
+            language:        song.language,
             featured_artists: song.featured_artists.map((artist: any) => ({
-                id: artist.id,
-                name: artist.name,
+                id:    artist.id,
+                name:  artist.name,
                 image: artist.image_url,
             })),
             primary_artist: {
-                id: song.primary_artist.id,
-                name: song.primary_artist.name,
+                id:    song.primary_artist.id,
+                name:  song.primary_artist.name,
                 image: song.primary_artist.image_url,
             },
             lyrics: lyrics,
-        }
+        };
 
         return NextResponse.json(formattedSong);
+
     } catch (error) {
         console.error('Error Genius API:', error as any);
         return NextResponse.json(
