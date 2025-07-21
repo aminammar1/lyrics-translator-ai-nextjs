@@ -1,8 +1,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { Loader } from './Loader'
-// import { TranslateSection } from "./TranslateSection"
-
+import TranslateSection from './TranslateSection'
 interface SongProps {
     song: any
     loading: boolean
@@ -107,13 +106,13 @@ export default function SongPage({ song, loading }: SongProps) {
                     </div>
                 </div>
             </div>
-            {/*
+            {
                 <TranslateSection
                     lyrics={song.lyrics}
                     language={song.language}
                     song={song}
                 />
-            */}
+            }
         </div>
     )
 }
