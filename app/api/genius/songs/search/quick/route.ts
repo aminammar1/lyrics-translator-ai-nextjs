@@ -33,18 +33,30 @@
     }
 
     console.log('Environment check - Token exists:', !!GENIUS_ACCESS_TOKEN)
+    console.log('Token length:', GENIUS_ACCESS_TOKEN?.length)
     console.log('Making request to Genius API for query:', query)
 
     try {
-        const response = await fetch(
-        `https://api.genius.com/search?q=${encodeURIComponent(query)}&per_page=3`,
-        {
-            headers: {
-            Authorization: `Bearer ${GENIUS_ACCESS_TOKEN}`,
-            },
-            next: { revalidate: 300 },
+        const url = `https://api.genius.com/search?q=${encodeURIComponent(query)}&per_page=3`
+        console.log('Request URL:', url)
+        
+        const headers = {
+            'Authorization': `Bearer ${GENIUS_ACCESS_TOKEN}`,
+            'User-Agent': 'SingLang/1.0',
+            'Accept': 'application/json',
         }
-        )
+        
+        console.log('Request headers:', Object.keys(headers))
+        
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+        
+        const response = await fetch(url, {
+            headers,
+            signal: controller.signal,
+        })
+        
+        clearTimeout(timeoutId)
 
         if (!response.ok) {
         const errorText = await response.text()
