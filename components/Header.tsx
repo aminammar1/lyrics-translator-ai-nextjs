@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { italiana } from '@/app/layout'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
-import { User, Music, Menu, X, Search } from 'lucide-react'
+import { Music, Menu, X, Search } from 'lucide-react'
 import SignupSignIn from './SignupSignIn'
 import { useSearch } from '@/hooks/useApi'
 import FastResults from './FastResults'
@@ -21,10 +21,10 @@ export default function Header() {
   const [showResults, setShowResults] = useState(false)
   const { loading, results, searchQuick } = useSearch()
 
-  const toggleOpenAuth = () => setOpenAuth((prev) => !prev)
-  const toggleMobileMenu = () => setMobileMenuOpen((prev) => !prev)
+  const toggleOpenAuth = () => setOpenAuth(prev => !prev)
+  const toggleMobileMenu = () => setMobileMenuOpen(prev => !prev)
   const toggleSearch = () => {
-    setSearchExpanded((prev) => !prev)
+    setSearchExpanded(prev => !prev)
     if (!searchExpanded) {
       setSearchQuery('')
       setShowResults(false)
@@ -37,7 +37,6 @@ export default function Header() {
       setShowResults(false)
       return
     }
-
     const data = await searchQuick(value)
     setShowResults(data.length > 0 || loading)
   }
@@ -51,6 +50,12 @@ export default function Header() {
     }
   }
 
+  const closeSearch = () => {
+    setSearchExpanded(false)
+    setSearchQuery('')
+    setShowResults(false)
+  }
+
   const handleAuthAction = async () => {
     if (userId) {
       await signOut()
@@ -62,9 +67,10 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed w-full bg-black/20 backdrop-blur-2xl border-b border-white/10 z-[120] shadow-2xl shadow-black/20">
+      <header className="fixed top-0 left-0 right-0 w-full bg-black/20 backdrop-blur-2xl border-b border-white/10 z-[120] shadow-2xl shadow-black/20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-16">
+
             {/* Logo */}
             <button
               className="flex items-center gap-3 hover:opacity-90 transition-opacity"
@@ -86,6 +92,7 @@ export default function Header() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8">
+
               {/* Search Button - Only show on song pages */}
               {pathname.startsWith('/song/') && (
                 <button
@@ -128,7 +135,7 @@ export default function Header() {
               ) : (
                 <button
                   onClick={handleAuthAction}
-                  className="px-5 py-2 bg-gradient-to-r from-custom-orange to-custom-pink text-white text-sm font-medium rounded-full hover:opacity-90 transition-opacity shadow-lg"
+                  className="px-6 py-2.5 bg-custom-orange/20 backdrop-blur-md border border-custom-orange/30 text-foreground text-sm font-medium rounded-full hover:bg-custom-orange/30 hover:border-custom-orange/50 transition-all duration-200"
                 >
                   Sign In
                 </button>
@@ -147,6 +154,7 @@ export default function Header() {
           {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div className="md:hidden border-t border-foreground/5 py-4 space-y-2">
+
               {/* Mobile Search Button - Only show on song pages */}
               {pathname.startsWith('/song/') && (
                 <button
@@ -196,7 +204,7 @@ export default function Header() {
               ) : (
                 <button
                   onClick={handleAuthAction}
-                  className="w-full mx-4 px-4 py-3 bg-gradient-to-r from-custom-orange to-custom-pink text-white font-medium rounded-xl hover:opacity-90 transition-opacity shadow-lg"
+                  className="w-full mx-4 px-4 py-3 bg-custom-orange/20 backdrop-blur-md border border-custom-orange/30 text-foreground font-medium rounded-2xl hover:bg-custom-orange/30 hover:border-custom-orange/50 transition-all duration-200"
                 >
                   Sign In
                 </button>
@@ -208,68 +216,35 @@ export default function Header() {
 
       {/* Search Overlay */}
       {searchExpanded && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-lg z-[200] flex items-start justify-center pt-24">
-          <div className="w-full max-w-2xl mx-4">
-            <div className="relative group">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[300] pt-20">
+          <div className="w-full max-w-2xl mx-auto px-4">
+            <div className="relative">
               <input
-                className="
-                                    w-full h-14 text-base px-6 pr-20
-                                    bg-black/40 backdrop-blur-2xl
-                                    border border-white/20
-                                    rounded-2xl 
-                                    placeholder:text-white/50 text-white
-                                    outline-none shadow-2xl shadow-black/40
-                                    transition-all duration-300 ease-out
-                                    focus:bg-black/50 focus:border-custom-orange/50
-                                    focus:shadow-2xl focus:shadow-custom-pink/20
-                                "
+                className="w-full h-14 px-6 pr-16 text-white placeholder-white/60 bg-black/50 backdrop-blur-xl border border-white/30 rounded-2xl outline-none text-lg"
                 placeholder="Search songs, artists, lyrics..."
-                onChange={(e) => handleSearchChange(e.target.value)}
+                onChange={e => handleSearchChange(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSearchSubmit()}
                 value={searchQuery}
                 autoFocus
               />
               <button
-                className="
-                                    w-12 h-12 absolute top-1 right-14
-                                    flex justify-center items-center 
-                                    rounded-xl 
-                                    bg-gradient-to-r from-custom-orange to-custom-pink
-                                    text-white
-                                    hover:shadow-lg hover:shadow-custom-pink/30
-                                    hover:scale-105
-                                    active:scale-95
-                                    transition-all duration-200
-                                "
-                onClick={handleSearchSubmit}
+                className="absolute top-2 right-2 w-10 h-10 bg-custom-orange rounded-xl flex items-center justify-center text-white hover:bg-custom-orange/80"
+                onClick={closeSearch}
               >
-                <Search size={18} strokeWidth={2.5} />
+                <X size={20} />
               </button>
-              <button
-                className="
-                                    w-12 h-12 absolute top-1 right-1
-                                    flex justify-center items-center 
-                                    rounded-xl 
-                                    bg-white/10 backdrop-blur-sm
-                                    text-white/80
-                                    hover:bg-white/20 hover:text-white
-                                    hover:scale-105
-                                    active:scale-95
-                                    transition-all duration-200
-                                "
-                onClick={toggleSearch}
-              >
-                <X size={18} strokeWidth={2.5} />
-              </button>
+
+              {/* Search Results */}
+              {showResults && searchQuery.trim() && (
+                <div className="mt-4 bg-black/50 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden">
+                  <FastResults
+                    results={results}
+                    loading={loading}
+                    setShowResults={setShowResults}
+                  />
+                </div>
+              )}
             </div>
-            {showResults && searchQuery.trim() && (
-              <div className="mt-4">
-                <FastResults
-                  results={results}
-                  loading={loading}
-                  setShowResults={setShowResults}
-                />
-              </div>
-            )}
           </div>
         </div>
       )}

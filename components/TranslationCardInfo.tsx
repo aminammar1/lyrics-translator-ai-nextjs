@@ -89,7 +89,6 @@ export default function TranslationCardInfo({
               </button>
             </div>
           </div>
-
           <div className="flex items-center justify-between mt-4 text-sm">
             <span className="px-2 py-1 bg-custom-orange/20 text-custom-orange rounded-full text-xs">
               {translation.original_language}
@@ -99,7 +98,6 @@ export default function TranslationCardInfo({
               {translation.translation_language}
             </span>
           </div>
-
           {translation.created_at && (
             <p className="text-foreground/40 text-xs mt-2">
               {new Date(translation.created_at).toLocaleDateString()}

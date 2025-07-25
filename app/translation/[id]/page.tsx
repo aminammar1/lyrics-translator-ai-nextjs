@@ -150,7 +150,7 @@ export default function TranslationPage() {
                     </h2>
                   </div>
                   <div className="bg-foreground/5 rounded-xl p-4 lg:p-5 border border-foreground/10 max-h-[70vh] overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm lg:text-base leading-relaxed text-foreground/90 font-light">
+                    <pre className="whitespace-pre-wrap text-sm lg:text-base leading-relaxed text-white font-light">
                       {translation.original_lyrics}
                     </pre>
                   </div>
@@ -164,7 +164,7 @@ export default function TranslationPage() {
                     </h2>
                   </div>
                   <div className="bg-gradient-to-br from-custom-orange/5 to-custom-pink/5 rounded-xl p-4 lg:p-5 border border-foreground/10 max-h-[70vh] overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm lg:text-base leading-relaxed text-foreground/90 font-light">
+                    <pre className="whitespace-pre-wrap text-sm lg:text-base leading-relaxed text-white font-light">
                       {translation.translated_lyrics}
                     </pre>
                   </div>
