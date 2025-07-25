@@ -46,44 +46,7 @@ export default function LyricsSection({
                             <div className="h-px bg-gradient-to-r from-foreground/40 via-foreground/20 to-transparent" />
                         </div>
 
-                        <div className="flex min-h-[300px] flex-1 items-center justify-center">
-                            {translatedLyrics === '' && !loading ? (
-                                <div className="max-w-sm text-center">
-                                    <div className="relative mx-auto mb-8 h-32 w-32 lg:h-36 lg:w-36">
-                                        <div
-                                            className="absolute inset-0 animate-spin rounded-full bg-gradient-to-br from-gray-900 to-black shadow-2xl"
-                                            style={{ animationDuration: '8s' }}
-                                        >
-                                            <div className="absolute inset-4 rounded-full border border-custom-orange/30 bg-gradient-to-br from-custom-orange/20 to-custom-pink/20">
-                                                <div className="absolute inset-6 flex items-center justify-center rounded-full bg-black">
-                                                    <div className="h-3 w-3 animate-pulse rounded-full bg-gradient-to-r from-custom-orange to-custom-pink" />
-                                                </div>
-                                            </div>
-                                            <div className="absolute inset-8 rounded-full border border-white/10" />
-                                            <div className="absolute inset-12 rounded-full border border-white/5" />
-                                        </div>
-                                        <div className="absolute -top-2 left-4 animate-float">
-                                            <span className="animate-pulse text-2xl text-custom-orange">♪</span>
-                                        </div>
-                                        <div className="absolute -bottom-2 right-6 animate-float" style={{ animationDelay: '1s' }}>
-                                            <span className="animate-pulse text-xl text-custom-pink">♫</span>
-                                        </div>
-                                        <div className="absolute top-4 -right-4 animate-float" style={{ animationDelay: '2s' }}>
-                                            <span className="animate-pulse text-lg text-custom-orange">♬</span>
-                                        </div>
-                                        <div className="absolute -inset-4 animate-pulse rounded-full bg-gradient-to-r from-custom-orange/10 to-custom-pink/10 blur-xl" />
-                                    </div>
-                                    <h4 className="mb-2 text-lg font-medium text-foreground/80 lg:text-xl">
-                                        Ready to Translate
-                                    </h4>
-                                    <p className="mb-3 text-sm text-foreground/60 lg:text-base">
-                                        Your translation will appear here
-                                    </p>
-                                    <p className="text-xs text-foreground/40 lg:text-sm">
-                                        Select a language and click the translate button
-                                    </p>
-                                </div>
-                            ) : loading ? (
+                            {loading ? (
                                 <div className="text-center">
                                     <div className="mb-6">
                                         <Loader width={36} />
@@ -108,6 +71,5 @@ export default function LyricsSection({
                     </div>
                 </div>
             </div>
-        </div>
     )
 }

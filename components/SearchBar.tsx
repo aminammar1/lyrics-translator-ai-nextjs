@@ -78,7 +78,7 @@ export default function SearchBar() {
 
   return (
     <>
-      {/* Only show SearchBar on non-song pages */}
+    
       {!isOnSongPage && (
         <div
           className="
@@ -87,25 +87,21 @@ export default function SearchBar() {
                     rounded-full
                 "
         >
-          <div className="relative group">
+            <div className="relative">
             <input
               className="
-                            w-[280px] sm:w-[320px] md:w-[400px] 
-                            lg:w-[600px] xl:w-[700px]
-                            h-12 text-sm px-5 pr-14
-                            bg-foreground/5 backdrop-blur-xl
-                            border border-foreground/10
-                            rounded-full 
-                            placeholder:text-foreground/40 text-foreground
-                            outline-none shadow-lg shadow-black/5
-                            transition-all duration-500 ease-out
-                            focus:bg-foreground/8 focus:border-custom-orange/30
-                            focus:shadow-xl focus:shadow-custom-pink/10
-                            focus:scale-[1.02]
-                            hover:bg-foreground/7 hover:border-foreground/20
-                            hover:shadow-xl hover:shadow-custom-pink/5
-                            group-hover:scale-[1.01]
-                        "
+                    w-[280px] sm:w-[320px] md:w-[400px] 
+                    lg:w-[600px] xl:w-[700px]
+                    h-12 text-sm px-5 pr-14
+                    bg-foreground/5 backdrop-blur-xl
+                    border border-foreground/10
+                    rounded-full 
+                    placeholder:text-foreground/40 text-foreground
+                    outline-none 
+                    transition-all duration-300
+                    focus:bg-foreground/8 focus:border-custom-orange/30
+                    hover:bg-foreground/7
+                  "
               placeholder="Search songs, artists, lyrics..."
               onChange={(e) => handleSearch(e.target.value)}
               onFocus={handleInputFocus}
@@ -114,29 +110,27 @@ export default function SearchBar() {
             />
             <button
               className="
-                            w-10 h-10 absolute top-1 right-1
-                            flex justify-center items-center 
-                            rounded-full 
-                            bg-gradient-to-r from-custom-orange to-custom-pink
-                            text-white
-                            hover:shadow-lg hover:shadow-custom-pink/30
-                            hover:scale-110
-                            active:scale-95
-                            transition-all duration-300 ease-out
-                            group-hover:rotate-6
-                        "
+                    w-10 h-10 absolute top-1 right-1
+                    flex justify-center items-center 
+                    rounded-full 
+                    bg-gradient-to-r from-custom-orange to-custom-pink
+                    text-white
+                    hover:opacity-90
+                    active:scale-95
+                    transition-all duration-200
+                  "
               onClick={handleButtonClick}
             >
               <Search size={16} strokeWidth={2.5} />
             </button>
             {showResults && lyricsToSearch.trim() && (
               <FastResults
-                results={results}
-                loading={loading}
-                setShowResults={setShowResults}
+              results={results}
+              loading={loading}
+              setShowResults={setShowResults}
               />
             )}
-          </div>
+            </div>
         </div>
       )}
     </>
