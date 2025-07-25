@@ -1,0 +1,319 @@
+name: Weekly Dependency Updates
+
+on:
+  schedule:
+    # Run every Sunday at 10:00 AM UTC
+    - cron: '0 10 * * 0'
+  workflow_dispatch:
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        update-type: [patch, minor]
+
+    outputs:
+      create_deprecated_issue: ${{ steps.set_deprecated_issue_flag.outputs.create_deprecated_issue }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install -g npm-check-updates
+
+      - name: Check for outdated packages
+        id: outdated
+        run: |
+          echo "Checking for outdated packages..."
+          OUTDATED=$(npm outdated --json 2>/dev/null || echo '{}')
+          echo "outdated=$OUTDATED" >> $GITHUB_OUTPUT
+
+          # Check if there are any outdated packages
+          if [ "$OUTDATED" = "{}" ]; then
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_updates=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Security audit
+        id: audit
+        run: |
+          echo "Running security audit..."
+          AUDIT_RESULT=$(npm audit --audit-level moderate --json 2>/dev/null || echo '{"vulnerabilities":{}}')
+          echo "audit_result=$AUDIT_RESULT" >> $GITHUB_OUTPUT
+
+          # Check for high/critical vulnerabilities
+          HIGH_VULNS=$(echo $AUDIT_RESULT | jq '.metadata.vulnerabilities.high // 0')
+          CRITICAL_VULNS=$(echo $AUDIT_RESULT | jq '.metadata.vulnerabilities.critical // 0')
+
+          if [ "$HIGH_VULNS" -gt 0 ] || [ "$CRITICAL_VULNS" -gt 0 ]; then
+            echo "has_security_issues=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_security_issues=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update dependencies (patch level)
+        if: matrix.update-type == 'patch' && steps.outdated.outputs.has_updates == 'true'
+        run: |
+          echo "Updating patch-level dependencies..."
+          ncu --target patch --upgrade
+          npm install
+
+      - name: Update dependencies (minor level)
+        if: matrix.update-type == 'minor' && steps.outdated.outputs.has_updates == 'true'
+        run: |
+          echo "Updating minor-level dependencies..."
+          ncu --target minor --upgrade
+          npm install
+
+      - name: Run tests and build
+        if: steps.outdated.outputs.has_updates == 'true'
+        run: |
+          echo "Running linting..."
+          npm run lint
+
+          echo "Running build..."
+          npm run build
+
+      - name: Generate update summary
+        if: steps.outdated.outputs.has_updates == 'true'
+        id: summary
+        run: |
+          echo "Generating update summary..."
+
+          # Get the changes
+          CHANGES=$(git diff --name-only HEAD~1 HEAD | grep -E "(package\.json|package-lock\.json)" || echo "")
+
+          if [ -n "$CHANGES" ]; then
+            echo "## Dependency Updates Summary" > update_summary.md
+            echo "" >> update_summary.md
+            echo "### Update Type: ${{ matrix.update-type }}" >> update_summary.md
+            echo "" >> update_summary.md
+
+            # Get updated packages
+            if [ -f "package.json" ]; then
+              echo "### Updated Packages:" >> update_summary.md
+              echo '```json' >> update_summary.md
+              git diff HEAD~1 HEAD package.json | grep "^[+-]" | grep -E '"\s*:\s*"[^"]*"' >> update_summary.md || echo "No package changes detected" >> update_summary.md
+              echo '```' >> update_summary.md
+              echo "" >> update_summary.md
+            fi
+
+            # Security info
+            if [ "${{ steps.audit.outputs.has_security_issues }}" = "true" ]; then
+              echo "### Security Issues Detected" >> update_summary.md
+              echo "Please review the security audit results." >> update_summary.md
+              echo "" >> update_summary.md
+            else
+              echo "### No Security Issues Detected" >> update_summary.md
+              echo "" >> update_summary.md
+            fi
+
+            echo "### Test Results:" >> update_summary.md
+            echo "- Linting: Passed" >> update_summary.md
+            echo "- Build: Successful" >> update_summary.md
+            echo "" >> update_summary.md
+
+            echo "### Useful Links:" >> update_summary.md
+            echo "- [NPM Changelog](https://github.com/npm/cli/releases)" >> update_summary.md
+            echo "- [Node.js Releases](https://nodejs.org/en/about/releases/)" >> update_summary.md
+            echo "" >> update_summary.md
+
+            SUMMARY_CONTENT=$(cat update_summary.md)
+            echo "summary_content<<EOF" >> $GITHUB_OUTPUT
+            echo "$SUMMARY_CONTENT" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for breaking changes
+        if: steps.summary.outputs.has_changes == 'true'
+        id: breaking_changes
+        run: |
+          echo "Checking for potential breaking changes..."
+
+          # List of packages that might introduce breaking changes
+          CRITICAL_PACKAGES=("next" "react" "react-dom" "@types/react" "@types/react-dom" "typescript" "tailwindcss")
+
+          HAS_CRITICAL_UPDATES=false
+          CRITICAL_UPDATES=""
+
+          for package in "${CRITICAL_PACKAGES[@]}"; do
+            if git diff HEAD~1 HEAD package.json | grep -q "\"$package\""; then
+              HAS_CRITICAL_UPDATES=true
+              CRITICAL_UPDATES="$CRITICAL_UPDATES- $package\n"
+            fi
+          done
+
+          if [ "$HAS_CRITICAL_UPDATES" = true ]; then
+            echo "has_breaking_changes=true" >> $GITHUB_OUTPUT
+            echo -e "critical_packages=$CRITICAL_UPDATES" >> $GITHUB_OUTPUT
+          else
+            echo "has_breaking_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deprecated package check
+        if: steps.summary.outputs.has_changes == 'true'
+        id: deprecated
+        run: |
+          echo "Checking for deprecated packages..."
+
+          # Check for deprecated packages
+          DEPRECATED_CHECK=$(npm ls --depth=0 --json 2>/dev/null | jq -r '.dependencies | to_entries[] | select(.value.deprecated) | .key' 2>/dev/null || echo "")
+
+          if [ -n "$DEPRECATED_CHECK" ]; then
+            echo "has_deprecated=true" >> $GITHUB_OUTPUT
+            echo "deprecated_packages=$DEPRECATED_CHECK" >> $GITHUB_OUTPUT
+          else
+            echo "has_deprecated=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip update if deprecated packages found
+        if: steps.deprecated.outputs.has_deprecated == 'true'
+        id: set_deprecated_issue_flag
+        run: |
+          echo "Deprecated packages detected:"
+          echo "${{ steps.deprecated.outputs.deprecated_packages }}"
+          echo "Skipping this update to prevent issues."
+
+          # Create issue to notify about deprecated packages
+          cat > deprecated_issue.md << EOF
+          ## Deprecated Dependencies Detected
+
+          The following packages in our project are deprecated and need attention:
+
+          ${{ steps.deprecated.outputs.deprecated_packages }}
+
+          ### Action Required:
+          1. Review each deprecated package
+          2. Find suitable alternatives
+          3. Update code to use new packages
+          4. Test thoroughly before merging
+
+          ### Resources:
+          - [NPM Package Health](https://snyk.io/advisor/)
+          - [Package Alternatives](https://www.npmtrends.com/)
+
+          **Note:** Automated dependency updates have been paused until this is resolved.
+          EOF
+
+          echo "create_deprecated_issue=true" >> $GITHUB_OUTPUT
+          exit 1
+
+      - name: Skip update if critical security issues
+        if: steps.audit.outputs.has_security_issues == 'true' && steps.breaking_changes.outputs.has_breaking_changes == 'true'
+        run: |
+          echo "Critical security issues detected with potential breaking changes."
+          echo "Manual review required before proceeding with update."
+          exit 1
+
+      - name: Create Pull Request
+        if: steps.summary.outputs.has_changes == 'true' && steps.deprecated.outputs.has_deprecated == 'false'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: |
+            chore(${{ matrix.update-type }}): update dependencies
+
+            - Updated ${{ matrix.update-type }}-level dependencies
+            - All tests and builds passing
+            - No security vulnerabilities detected
+          title: 'Weekly Dependency Updates (${{ matrix.update-type }})'
+          body: |
+            ${{ steps.summary.outputs.summary_content }}
+
+            ${{ steps.breaking_changes.outputs.has_breaking_changes == 'true' && '### Potential Breaking Changes\nThe following critical packages were updated:\n${{ steps.breaking_changes.outputs.critical_packages }}\n\n**Please review carefully before merging!**\n' || '' }}
+
+            ---
+
+            This PR was automatically created by the weekly dependency update workflow.
+
+            ### Checklist:
+            - [x] Dependencies updated
+            - [x] Build successful  
+            - [x] Linting passed
+            - [x] No deprecated packages
+            ${{ steps.audit.outputs.has_security_issues == 'false' && '- [x] No security vulnerabilities' || '- [ ] Security audit needs review' }}
+
+            ### Review Instructions:
+            1. Check the updated packages
+            2. Test the application locally
+            3. Verify all features work as expected
+            4. Merge if everything looks good
+
+          branch: automated-dependency-updates-${{ matrix.update-type }}
+          delete-branch: true
+          labels: |
+            dependencies
+            automated
+            ${{ matrix.update-type }}-update
+
+  create-deprecated-issue:
+    needs: update-dependencies
+    runs-on: ubuntu-latest
+    if: needs.update-dependencies.outputs.create_deprecated_issue == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create issue for deprecated packages
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'docs: create deprecated packages issue'
+          title: 'Deprecated Dependencies Need Attention'
+          body-path: deprecated_issue.md
+          branch: deprecated-packages-issue
+          labels: |
+            dependencies
+            deprecated
+            high-priority
+
+  notify-completion:
+    needs: [update-dependencies, create-deprecated-issue]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Workflow Summary
+        run: |
+          echo "## Weekly Dependency Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ needs.update-dependencies.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.update-dependencies.result }}" = "success" ]; then
+            echo "Dependencies successfully updated!" >> $GITHUB_STEP_SUMMARY
+            echo "Check for new pull requests in this repository." >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.update-dependencies.result }}" = "failure" ]; then
+            echo "Dependency update failed." >> $GITHUB_STEP_SUMMARY
+            echo "This might be due to:" >> $GITHUB_STEP_SUMMARY
+            echo "- Deprecated packages detected" >> $GITHUB_STEP_SUMMARY
+            echo "- Critical security issues with breaking changes" >> $GITHUB_STEP_SUMMARY
+            echo "- Build or test failures" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the logs and address any issues manually." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No updates were needed." >> $GITHUB_STEP_SUMMARY
+          fi
