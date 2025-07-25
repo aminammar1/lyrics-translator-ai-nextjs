@@ -33,20 +33,30 @@ export async function GET(req: NextRequest) {
   }
 
   console.log('Environment check - Token exists:', !!GENIUS_ACCESS_TOKEN)
+  console.log('Token length:', GENIUS_ACCESS_TOKEN?.length)
   console.log('Making full search request to Genius API for query:', query)
 
   try {
-    const response = await fetch(
-      `https://api.genius.com/search?q=${encodeURIComponent(
-        query
-      )}&per_page=12`,
-      {
-        headers: {
-          Authorization: `Bearer ${GENIUS_ACCESS_TOKEN}`,
-        },
-        next: { revalidate: 300 },
-      }
-    )
+    const url = `https://api.genius.com/search?q=${encodeURIComponent(query)}&per_page=12`
+    console.log('Request URL:', url)
+    
+    const headers = {
+      'Authorization': `Bearer ${GENIUS_ACCESS_TOKEN}`,
+      'User-Agent': 'SingLang/1.0',
+      'Accept': 'application/json',
+    }
+    
+    console.log('Request headers:', Object.keys(headers))
+    
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+    
+    const response = await fetch(url, {
+      headers,
+      signal: controller.signal,
+    })
+    
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -100,13 +110,35 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(filteredResults, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
     })
   } catch (error: any) {
-    console.error('Error in full search API:', error)
+    console.error('Error in full search API:', {
+      message: error.message,
+      stack: error.stack,
+      query: query,
+      timestamp: new Date().toISOString(),
+    })
+
     return NextResponse.json(
-      { error: error.message || 'Failed to search songs' },
-      { status: 500 }
+      {
+        error:
+          process.env.NODE_ENV === 'development'
+            ? error.message || 'Failed to search songs'
+            : 'Failed to search songs',
+        timestamp: new Date().toISOString(),
+      },
+      {
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+      }
     )
   }
 }
