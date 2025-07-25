@@ -1,128 +1,196 @@
 import React, { memo, useCallback, useEffect, useState } from 'react'
-import { Repeat } from 'lucide-react'
-import { FaMagic } from 'react-icons/fa'
-import { Copy } from 'lucide-react'
-import { IoMdArrowDropdownCircle } from "react-icons/io"
-import { SaveIcon } from 'lucide-react'
+import { Repeat, Copy, SaveIcon, Languages, Sparkles } from 'lucide-react'
+import { IoMdArrowDropdownCircle } from 'react-icons/io'
+import { useAuth } from '@/context/AuthContext'
+import { saveTranslation } from '@/supabase/data/translations'
+import toast from 'react-hot-toast'
 
 const languages = [
-    "Arabic",
-    "English",
-    "Spanish",
-    "French",
-    "German",
-    "Chinese",
-    "Japanese",
-    "Russian",
-    "Korean",
-    "Portuguese",
-    "Italian",
-    "Turkish",
+  'Arabic',
+  'English',
+  'Spanish',
+  'French',
+  'German',
+  'Chinese',
+  'Japanese',
+  'Russian',
+  'Korean',
+  'Portuguese',
+  'Italian',
+  'Turkish',
 ]
 
 interface TranslateBarProps {
-    language: string
-    translate: (language: string) => void
-    lyrics: string
-    song: any
+  language: string
+  translate: (language: string) => void
+  lyrics: string
+  song: any
+  originalLyrics: string
 }
 
 const TranslateBar: React.FC<TranslateBarProps> = memo(
-    ({ language, translate, lyrics, song }) => {
-        const [copyText, setCopyText] = useState<string>("Copy")
-        const [selectedLanguage, setSelectedLanguage] = useState<string>("English")
-        const [isDisabled, setIsDisabled] = useState(false)
-        const [saveDisabled, setSaveDisabled] = useState(false)
+  ({ language, translate, lyrics, song, originalLyrics }) => {
+    const { user } = useAuth()
+    const [copyText, setCopyText] = useState<string>('Copy')
+    const [selectedLanguage, setSelectedLanguage] = useState<string>('English')
+    const [isDisabled, setIsDisabled] = useState(false)
+    const [saveDisabled, setSaveDisabled] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
 
-        useEffect(() => {
-            setIsDisabled(false)
-            setCopyText("Copy")
-            setSaveDisabled(false)
-        }, [lyrics])
+    useEffect(() => {
+      setIsDisabled(false)
+      setCopyText('Copy')
+      setSaveDisabled(false)
+    }, [lyrics])
 
-        const clickOnCopy = useCallback(() => {
-            setIsDisabled(true)
-            setCopyText("Copied")
-            navigator.clipboard.writeText(lyrics)
-        }, [lyrics])
+    const clickOnCopy = useCallback(() => {
+      setIsDisabled(true)
+      setCopyText('Copied')
+      navigator.clipboard.writeText(lyrics)
+      setTimeout(() => {
+        setIsDisabled(false)
+        setCopyText('Copy')
+      }, 2000)
+    }, [lyrics])
 
-        const clickOnSave = useCallback(() => {
-            setSaveDisabled(true)
-            // Logic to save the lyrics can be added here
-        }, [])
+    const clickOnSave = useCallback(async () => {
+      if (!user) {
+        toast.error('Please sign in to save translations')
+        return
+      }
 
-        const handleChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-            setSelectedLanguage(e.target.value)
-        }, [])
+      if (!lyrics || !originalLyrics) {
+        toast.error('No translation to save')
+        return
+      }
 
-        return (
-            <div className="flex justify-between items-center z-[100]">
-                <p className="bg-transparent rounded-full p-2 inline shadow-inner shadow-foreground opacity-75 text-xs md:text-s lg:text-base">
-                    {language}
-                </p>
-                <div className="mx-5 flex items-center">
-                    <Repeat size={40} />
-                </div>
-                <div className="flex justify-end gap-2 flex-wrap">
-                    <div className="relative hover:opacity-[0.7]">
-                        <select
-                            className="bg-transparent text-xs md:text-s lg:text-base rounded-full p-2 pr-4 outline-none button shadow-inner shadow-foreground cursor-pointer appearance-none"
-                            value={selectedLanguage}
-                            onChange={handleChange}
-                        >
-                            {languages.map((language, i) => (
-                                <option key={i} value={language}>
-                                    {language}
-                                </option>
-                            ))}
-                        </select>
-                        <IoMdArrowDropdownCircle
-                            size={18}
-                            className="absolute right-2 top-0 bottom-0 m-auto cursor-pointer text-foreground"
-                        />
-                    </div>
-                    <button
-                        className="flex items-center gap-1 rounded-full shadow-inner button shadow-foreground p-2"
-                        onClick={() => translate(selectedLanguage)}
-                    >
-                        <p className="text-xs md:text-s lg:text-base">Translate</p>
-                        <FaMagic size={20} className="text-foreground" />
-                    </button>
-                    <button
-                        className={
-                            `flex items-center gap-1 rounded-full shadow-inner button shadow-foreground p-2` +
-                            (isDisabled ? " opacity-50 !cursor-default" : " button")
-                        }
-                        onClick={clickOnCopy}
-                        disabled={isDisabled}
-                    >
-                        <p className="text-xs md:text-s lg:text-base">{copyText}</p>
-                        <Copy size={20} className="text-foreground" />
-                    </button>
-                    <button
-                        className={
-                            `flex items-center gap-1 rounded-full shadow-inner shadow-foreground p-2` +
-                            (saveDisabled ? " opacity-50 !cursor-default" : " button")
-                        }
-                        //onClick={clickOnSave}
-                        //disabled={saveDisabled}
-                    >
-                        <p className="text-xs md:text-s lg:text-base">
-                            {saveDisabled ? "Saved" : "Save"}
-                        </p>
-                        <SaveIcon size={20} className="text-foreground" />
-                    </button>
-                </div>
+      setIsSaving(true)
+      setSaveDisabled(true)
+
+      const translationData = {
+        song_id: song.id?.toString() || '',
+        title: song.title || '',
+        artist: song.artist_name || '',
+        image_url: song.image || '',
+        original_language: language || 'Unknown',
+        translation_language: selectedLanguage,
+        original_lyrics: originalLyrics,
+        translated_lyrics: lyrics,
+        user_id: user.id,
+      }
+
+      const { data, error } = await saveTranslation(translationData)
+
+      if (error) {
+        toast.error(error)
+        setSaveDisabled(false)
+        setIsSaving(false)
+        return
+      }
+
+      toast.success('Translation saved successfully!')
+
+      setTimeout(() => {
+        setSaveDisabled(false)
+        setIsSaving(false)
+      }, 2000)
+    }, [user, lyrics, originalLyrics, song, language, selectedLanguage])
+
+    const handleChange = useCallback(
+      (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedLanguage(e.target.value)
+      },
+      []
+    )
+
+    return (
+      <div className="glass-effect rounded-2xl p-4 lg:p-6 mb-6 shadow-2xl shadow-custom-orange/10 fade-in border border-foreground/20">
+        <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between lg:items-center">
+          <div className="flex flex-col sm:flex-row items-center gap-4 lg:gap-6">
+            <div className="flex items-center gap-3 bg-gradient-to-r from-custom-orange/20 to-custom-pink/20 rounded-full px-4 py-2.5 border border-foreground/30 shadow-lg">
+              <Languages size={18} className="text-foreground/80" />
+              <span className="text-sm lg:text-base font-medium text-foreground whitespace-nowrap">
+                {language || 'Unknown'}
+              </span>
             </div>
-        )
-    },
-    (prevProps, nextProps) => {
-        return (
-            prevProps.language === nextProps.language &&
-            prevProps.lyrics === nextProps.lyrics &&
-            prevProps.song === nextProps.song
-        )
-    }
+            <div className="hidden sm:flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-custom-orange/30 to-custom-pink/30 border border-foreground/30 shadow-lg">
+              <Repeat size={20} className="text-foreground/80 animate-pulse" />
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+            <div className="relative group w-full sm:w-auto">
+              <select
+                className="w-full sm:w-auto bg-gradient-to-br from-black/70 to-black/50 text-sm lg:text-base rounded-xl px-4 py-3 pr-12 outline-none border border-foreground/30 cursor-pointer appearance-none hover:border-foreground/50 transition-all duration-300 min-w-[160px] focus:ring-2 focus:ring-custom-orange/50 shadow-lg"
+                value={selectedLanguage}
+                onChange={handleChange}
+              >
+                {languages.map((language, i) => (
+                  <option
+                    key={i}
+                    value={language}
+                    className="bg-background text-foreground py-2"
+                  >
+                    {language}
+                  </option>
+                ))}
+              </select>
+              <IoMdArrowDropdownCircle
+                size={22}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-foreground/60 pointer-events-none group-hover:text-foreground/80 transition-colors duration-200"
+              />
+            </div>
+            <button
+              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-custom-orange/90 to-custom-pink/90 hover:from-custom-orange hover:to-custom-pink px-6 py-3 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl border border-foreground/30 font-medium"
+              onClick={() => translate(selectedLanguage)}
+            >
+              <Sparkles size={18} className="text-white" />
+              <span className="text-sm lg:text-base text-white whitespace-nowrap">
+                Translate
+              </span>
+            </button>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-3 transition-all duration-300 transform border border-foreground/30 shadow-lg ${
+                  isDisabled
+                    ? 'bg-green-500/20 text-green-400 cursor-default shadow-green-500/20'
+                    : 'bg-black/50 hover:bg-black/70 hover:scale-105 active:scale-95 text-foreground hover:border-foreground/50'
+                }`}
+                onClick={clickOnCopy}
+                disabled={isDisabled}
+              >
+                <Copy size={16} />
+                <span className="text-sm font-medium whitespace-nowrap">
+                  {copyText}
+                </span>
+              </button>
+              <button
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-3 transition-all duration-300 transform border border-foreground/30 shadow-lg ${
+                  saveDisabled || isSaving
+                    ? 'bg-blue-500/20 text-blue-400 cursor-default shadow-blue-500/20'
+                    : 'bg-black/50 hover:bg-black/70 hover:scale-105 active:scale-95 text-foreground hover:border-foreground/50'
+                }`}
+                onClick={clickOnSave}
+                disabled={saveDisabled || isSaving}
+              >
+                <SaveIcon size={16} />
+                <span className="text-sm font-medium whitespace-nowrap">
+                  {isSaving ? 'Saving...' : saveDisabled ? 'Saved' : 'Save'}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.language === nextProps.language &&
+      prevProps.lyrics === nextProps.lyrics &&
+      prevProps.song === nextProps.song &&
+      prevProps.originalLyrics === nextProps.originalLyrics
+    )
+  }
 )
 
 export default TranslateBar
