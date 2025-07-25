@@ -1,25 +1,24 @@
 import axios from 'axios'
 import { handleApiError } from './errorHandler'
-import { API_CONFIG } from './constants'
 
 const api = axios.create({
-    baseURL: API_CONFIG.BASE_URL,
-    timeout: API_CONFIG.TIMEOUT,
+    baseURL: '/api',
+    timeout: 30000,
     headers: {
-        'Content-Type': 'application/json',
-    },
+        'Content-Type': 'application/json'
+    }
 })
 
 api.interceptors.response.use(
-    response => response,
-    error => {
+    (response) => response,
+    (error) => {
         const apiError = handleApiError(error.response?.data || error)
 
         console.error('API Error:', {
             url: error.config?.url,
             status: error.response?.status,
             data: error.response?.data,
-            message: apiError.message,
+            message: apiError.message
         })
 
         throw new Error(apiError.message || 'API request failed')
@@ -46,7 +45,7 @@ export const geniusApi = {
             `/genius/songs/${songId}?url=${encodeURIComponent(songUrl)}`
         )
         return response.data
-    },
+    }
 }
 
 export default api
