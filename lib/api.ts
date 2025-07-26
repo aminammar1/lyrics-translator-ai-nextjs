@@ -1,51 +1,68 @@
-import axios from 'axios'
-import { handleApiError } from './errorHandler'
+    import { handleApiError } from './errorHandler'
 
-const api = axios.create({
-    baseURL: '/api',
-    timeout: 30000,
-    headers: {
-        'Content-Type': 'application/json'
-    }
-})
+    const API_BASE_URL = '/api'
+    const API_TIMEOUT = 30000
 
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        const apiError = handleApiError(error.response?.data || error)
+    const fetchWithTimeout = async (url: string, options: RequestInit = {}) => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT)
+
+    try {
+        const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        },
+        })
+
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const apiError = handleApiError(errorData)
 
         console.error('API Error:', {
-            url: error.config?.url,
-            status: error.response?.status,
-            data: error.response?.data,
-            message: apiError.message
+            url: response.url,
+            status: response.status,
+            data: errorData,
+            message: apiError.message,
         })
 
         throw new Error(apiError.message || 'API request failed')
-    }
-)
+        }
 
-export const geniusApi = {
+        return response
+    } catch (error) {
+        clearTimeout(timeoutId)
+        throw error
+    }
+    }
+
+    export const geniusApi = {
     searchQuick: async (query: string) => {
-        const response = await api.get(
-            `/genius/songs/search/quick?q=${encodeURIComponent(query)}`
+        const response = await fetchWithTimeout(
+        `${API_BASE_URL}/genius/songs/search/quick?q=${encodeURIComponent(query)}`
         )
-        return response.data
+        return response.json()
     },
 
     searchFull: async (query: string) => {
-        const response = await api.get(
-            `/genius/songs/search/full?q=${encodeURIComponent(query)}`
+        const response = await fetchWithTimeout(
+        `${API_BASE_URL}/genius/songs/search/full?q=${encodeURIComponent(query)}`
         )
-        return response.data
+        return response.json()
     },
 
     getSong: async (songId: string, songUrl: string) => {
-        const response = await api.get(
-            `/genius/songs/${songId}?url=${encodeURIComponent(songUrl)}`
+        const response = await fetchWithTimeout(
+        `${API_BASE_URL}/genius/songs/${songId}?url=${encodeURIComponent(
+            songUrl
+        )}`
         )
-        return response.data
+        return response.json()
+    },
     }
-}
 
-export default api
+    export default { geniusApi }
