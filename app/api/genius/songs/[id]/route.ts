@@ -4,10 +4,11 @@ import * as cheerio from 'cheerio'
 
 export async function GET(
   req: NextRequest,
-  { params }: any
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   const { searchParams } = new URL(req.url)
-  const songId = params.id
+  const resolvedParams = await params
+  const songId = resolvedParams.id
   const songUrl = searchParams.get('url')
 
   if (!songId) {
@@ -33,30 +34,13 @@ export async function GET(
   }
 
   try {
-    // Try with access_token as query parameter first
-    let response = await fetch(
+    const response = await fetch(
       `https://api.genius.com/songs/${encodeURIComponent(
         songId
       )}?access_token=${GENIUS_ACCESS_TOKEN}`
     )
 
-    // If that fails with 403, try with Bearer header as fallback
-    if (!response.ok && response.status === 403) {
-      console.log('Query param auth failed, trying Bearer header...')
-      response = await fetch(
-        `https://api.genius.com/songs/${encodeURIComponent(songId)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${GENIUS_ACCESS_TOKEN}`,
-          },
-        }
-      )
-    }
-
     if (!response.ok) {
-      console.error(
-        `Genius API Error: ${response.status} ${response.statusText}`
-      )
       throw new Error(`Error Genius API: ${response.statusText}`)
     }
 
@@ -96,7 +80,6 @@ export async function GET(
 
     return NextResponse.json(formattedSong)
   } catch (error) {
-    console.error('Error Genius API:', error as any)
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
