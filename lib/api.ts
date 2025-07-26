@@ -57,9 +57,9 @@
 
     getSong: async (songId: string, songUrl: string) => {
         const response = await fetchWithTimeout(
-        `${API_BASE_URL}/genius/songs/${songId}?url=${(
+        `${API_BASE_URL}/genius/songs/${songId}?url=${(encodeURIComponent(
             songUrl
-        )}`
+        ))}`
         )
         return response.json()
     },
