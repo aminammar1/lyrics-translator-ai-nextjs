@@ -7,8 +7,7 @@ export async function GET(
   { params }: any
 ): Promise<NextResponse> {
   const { searchParams } = new URL(req.url)
-  const resolvedParams = await params
-  const songId = resolvedParams.id
+  const songId = params.id
   const songUrl = searchParams.get('url')
 
   if (!songId) {
@@ -24,68 +23,47 @@ export async function GET(
       { status: 400 }
     )
   }
-
   const GENIUS_ACCESS_TOKEN = process.env.GENIUS_ACCESS_TOKEN
 
   if (!GENIUS_ACCESS_TOKEN) {
     return NextResponse.json(
-      { error: 'Missing Genius API token configuration' },
+      { error: 'Missing Genius API token' },
       { status: 500 }
     )
   }
 
   try {
-    const [songResponse, songPageResponse] = await Promise.all([
-      fetch(
-        `https://api.genius.com/songs/${encodeURIComponent(
-          songId
-        )}?access_token=${GENIUS_ACCESS_TOKEN}`,
+    // Try with access_token as query parameter first
+    let response = await fetch(
+      `https://api.genius.com/songs/${encodeURIComponent(
+        songId
+      )}?access_token=${GENIUS_ACCESS_TOKEN}`
+    )
+
+    // If that fails with 403, try with Bearer header as fallback
+    if (!response.ok && response.status === 403) {
+      console.log('Query param auth failed, trying Bearer header...')
+      response = await fetch(
+        `https://api.genius.com/songs/${encodeURIComponent(songId)}`,
         {
-          next: { revalidate: 3600 },
+          headers: {
+            Authorization: `Bearer ${GENIUS_ACCESS_TOKEN}`,
+          },
         }
-      ),
-      axios.get(songUrl, { timeout: 15000 }),
-    ])
-
-    if (!songResponse.ok) {
-      const errorText = await songResponse.text()
-      console.error('Genius API Error Details:', {
-        status: songResponse.status,
-        statusText: songResponse.statusText,
-        body: errorText,
-        songId: songId,
-        url: songResponse.url,
-      })
-
-      // Return more specific error messages
-      if (songResponse.status === 403) {
-        return NextResponse.json(
-          { error: 'Genius API access forbidden. Check your API token.' },
-          { status: 403 }
-        )
-      }
-
-      if (songResponse.status === 401) {
-        return NextResponse.json(
-          { error: 'Unauthorized access to Genius API. Invalid token.' },
-          { status: 401 }
-        )
-      }
-
-      throw new Error(
-        `Genius API Error: ${songResponse.status} ${songResponse.statusText}`
       )
     }
 
-    const data = await songResponse.json()
-
-    if (!data.response || !data.response.song) {
-      console.error('Invalid Genius API response structure:', data)
-      throw new Error('Invalid song data received')
+    if (!response.ok) {
+      console.error(
+        `Genius API Error: ${response.status} ${response.statusText}`
+      )
+      throw new Error(`Error Genius API: ${response.statusText}`)
     }
 
-    const $ = cheerio.load(songPageResponse.data)
+    const data = await response.json()
 
+    const songPageResponse = await axios.get(songUrl)
+    const $ = cheerio.load(songPageResponse.data)
     const lyricsContainer = $('[data-lyrics-container="true"]')
     $('br', lyricsContainer).replaceWith('\n')
     $('a', lyricsContainer).replaceWith((_i, el) => $(el).text())
@@ -116,15 +94,11 @@ export async function GET(
       lyrics: lyrics,
     }
 
-    return NextResponse.json(formattedSong, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
-      },
-    })
-  } catch (error: any) {
-    console.error('Error in song details API:', error)
+    return NextResponse.json(formattedSong)
+  } catch (error) {
+    console.error('Error Genius API:', error as any)
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch song details' },
+      { error: 'Internal Server Error' },
       { status: 500 }
     )
   }
