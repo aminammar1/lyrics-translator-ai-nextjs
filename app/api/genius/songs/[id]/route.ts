@@ -1,15 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
-import axios from 'axios'
-import * as cheerio from 'cheerio'
+import { NextRequest, NextResponse } from "next/server"
+import axios from "axios"
+import * as cheerio from "cheerio"
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: any
 ): Promise<NextResponse> {
   const { searchParams } = new URL(req.url)
-  const resolvedParams = await params
-  const songId = resolvedParams.id
-  const songUrl = searchParams.get('url')
+  const { id } = await params
+  const songId = id
+  const songUrl = searchParams.get("url")
 
   if (!songId) {
     return NextResponse.json(
@@ -24,20 +24,24 @@ export async function GET(
       { status: 400 }
     )
   }
+
   const GENIUS_ACCESS_TOKEN = process.env.GENIUS_ACCESS_TOKEN
 
   if (!GENIUS_ACCESS_TOKEN) {
     return NextResponse.json(
-      { error: 'Missing Genius API token' },
+      { error: "Missing Genius API token" },
       { status: 500 }
     )
   }
 
   try {
     const response = await fetch(
-      `https://api.genius.com/songs/${encodeURIComponent(
-        songId
-      )}?access_token=${GENIUS_ACCESS_TOKEN}`
+      `https://api.genius.com/songs/${encodeURIComponent(songId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${GENIUS_ACCESS_TOKEN}`,
+        },
+      }
     )
 
     if (!response.ok) {
@@ -49,11 +53,12 @@ export async function GET(
     const songPageResponse = await axios.get(songUrl)
     const $ = cheerio.load(songPageResponse.data)
     const lyricsContainer = $('[data-lyrics-container="true"]')
-    $('br', lyricsContainer).replaceWith('\n')
-    $('a', lyricsContainer).replaceWith((_i, el) => $(el).text())
+    
+    $("br", lyricsContainer).replaceWith("\n")
+    $("a", lyricsContainer).replaceWith((_i, el) => $(el).text())
     lyricsContainer.children().remove()
+    
     const lyrics = lyricsContainer.text()
-
     const song = data.response.song
 
     const formattedSong = {
@@ -64,12 +69,11 @@ export async function GET(
       image: song.header_image_url,
       release_date: song.release_date_for_display,
       language: song.language,
-      featured_artists:
-        song.featured_artists?.map((artist: any) => ({
-          id: artist.id,
-          name: artist.name,
-          image: artist.image_url,
-        })) || [],
+      featured_artists: song.featured_artists.map((artist: any) => ({
+        id: artist.id,
+        name: artist.name,
+        image: artist.image_url,
+      })),
       primary_artist: {
         id: song.primary_artist.id,
         name: song.primary_artist.name,
@@ -80,8 +84,9 @@ export async function GET(
 
     return NextResponse.json(formattedSong)
   } catch (error) {
+    console.error("Error Genius API:", error as any)
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { error: "Internal Server Error" },
       { status: 500 }
     )
   }
