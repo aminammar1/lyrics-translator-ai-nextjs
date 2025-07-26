@@ -22,12 +22,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const response = await fetch(
-      `https://api.genius.com/search?q=${encodeURIComponent(query)}&per_page=3`,
-      {
-        headers: {
-          Authorization: `Bearer ${GENIUS_ACCESS_TOKEN}`,
-        },
-      }
+      `https://api.genius.com/search?q=${encodeURIComponent(
+        query
+      )}&per_page=3&access_token=${GENIUS_ACCESS_TOKEN}`
     )
 
     if (!response.ok) {

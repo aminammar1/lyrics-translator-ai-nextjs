@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
 
     if (!query) {
         return NextResponse.json(
-            { error: 'Query parameter \"q\" is required' },
+            { error: 'Query parameter "q" is required' },
             { status: 400 }
         )
     }
@@ -22,16 +22,11 @@ export async function GET(req: NextRequest) {
 
     try {
         const response = await fetch(
-            `https://api.genius.com/search?q=d:\sing-lang\app\api\genius\songs\[id]\route.ts{encodeURIComponent(query)}&per_page=12`,
-            {
-                headers: {
-                    Authorization: `Bearer d:\sing-lang\app\api\genius\songs\[id]\route.ts{GENIUS_ACCESS_TOKEN}`,
-                },
-            }
+            `https://api.genius.com/search?q=${encodeURIComponent(query)}&per_page=12&access_token=${GENIUS_ACCESS_TOKEN}`
         )
 
         if (!response.ok) {
-            throw new Error(`Genius API Error: d:\sing-lang\app\api\genius\songs\[id]\route.ts{response.status} d:\sing-lang\app\api\genius\songs\[id]\route.ts{response.statusText}`)
+            throw new Error(`Genius API Error: ${response.status} ${response.statusText}`)
         }
 
         const data = await response.json()
