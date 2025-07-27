@@ -18,6 +18,8 @@
 
 Sing Lang is a modern web application that breaks down language barriers in music. Search for any song, get its lyrics, and translate them into any language using advanced AI translation models. Whether you're learning a new language, exploring international music, or just curious about what your favorite foreign songs mean, Sing Lang has you covered.
 
+> **Note**: This is a development project showcasing AI-powered lyrics translation. The application is not currently deployed but can be run locally for testing and development purposes.
+
 ## ✨ Features
 
 - 🔍 **Smart Song Search**: Search for songs using the Genius API with comprehensive results
@@ -27,6 +29,32 @@ Sing Lang is a modern web application that breaks down language barriers in musi
 - ⚡ **Fast & Efficient**: Built with Next.js 15 for optimal performance
 - 🎨 **Beautiful UI**: Modern design with Tailwind CSS and Lucide icons
 - 💾 **Translation History**: Save and manage your translation history
+
+## 📸 Screenshots
+
+<div align="center">
+
+### 🏠 Home Page
+
+<img src="public/assets/picture1.png" alt="Home Page" width="800" />
+
+### 🔍 Search Results
+
+<img src="public/assets/picture2.png" alt="Search Results" width="800" />
+
+### 🎵 Song Lyrics View
+
+<img src="public/assets/picture3.png" alt="Song Lyrics" width="800" />
+
+### 🌐 Translation Interface
+
+<img src="public/assets/picture4.png" alt="Translation Interface" width="800" />
+
+### 💾 Saved Translations
+
+<img src="public/assets/picture5.png" alt="Saved Translations" width="800" />
+
+</div>
 
 ## 🏗️ Project Structure
 
@@ -95,7 +123,7 @@ sing-lang/
 ### Prerequisites
 
 - Node.js 18+ and npm/yarn/pnpm
-- A Genius API key ([Get one here](https://genius.com/api-clients))
+- A Genius API key ([Get one here](https://genius.com/api-clients)) - **Note: Used for testing purposes only**
 - An OpenRouter API key ([Get one here](https://openrouter.ai/))
 - A Supabase project ([Create one here](https://supabase.com/))
 
@@ -320,7 +348,7 @@ Copyright (c) 2025 Amin Ammar
 
 ## 🙏 Acknowledgements
 
-- [Genius](https://genius.com/) for providing the lyrics API
+- [Genius](https://genius.com/) for providing the lyrics API (**used for testing and educational purposes only**)
 - [OpenRouter](https://openrouter.ai/) for AI translation services
 - [Supabase](https://supabase.com/) for backend services
 - [Next.js](https://nextjs.org/) team for the amazing framework
