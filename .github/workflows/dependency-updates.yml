@@ -344,3 +344,15 @@ jobs:
 
           if [ "${{ needs.update-dependencies.result }}" = "success" ]; then
             echo "Dependencies successfully updated!" >> $GITHUB_STEP_SUMMARY
+            echo "Check for new pull requests in this repository." >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.update-dependencies.result }}" = "failure" ]; then
+            echo "Dependency update failed." >> $GITHUB_STEP_SUMMARY
+            echo "This might be due to:" >> $GITHUB_STEP_SUMMARY
+            echo "- Deprecated packages detected" >> $GITHUB_STEP_SUMMARY
+            echo "- Critical security issues with breaking changes" >> $GITHUB_STEP_SUMMARY
+            echo "- Build or test failures" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the logs and address any issues manually." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No updates were needed." >> $GITHUB_STEP_SUMMARY
+          fi
