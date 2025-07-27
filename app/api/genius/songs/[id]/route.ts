@@ -7,7 +7,7 @@ export async function GET(
   { params }: any
 ): Promise<NextResponse> {
   const { searchParams } = new URL(req.url)
-  const songId = params.id
+  const { id: songId } = await params
   const songUrl = searchParams.get("url")
 
   if (!songId) {
